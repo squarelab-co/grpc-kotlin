@@ -260,7 +260,10 @@ object ServerCalls {
       val closeStatus = when (failure) {
         null -> Status.OK
         is CancellationException -> Status.CANCELLED.withCause(failure)
-        else -> Status.fromThrowable(failure)
+
+        // If a cause not added here, Status.cause is null for ServerException or
+        // StatusException. Therefore the error 'cause' will not be logged.
+        else -> Status.fromThrowable(failure).withCause(failure)
       }
       val trailers = failure?.let { Status.trailersFromThrowable(it) } ?: GrpcMetadata()
       mutex.withLock { call.close(closeStatus, trailers) }
